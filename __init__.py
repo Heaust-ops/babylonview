@@ -593,4 +593,5 @@ def unregister():
 
 bpy.app.debug = True
 if __name__ == "__main__":
+    os.chdir("./")
     register()
