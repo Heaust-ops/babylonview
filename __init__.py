@@ -520,7 +520,8 @@ class GenericHTTPRequestHandler(http.server.SimpleHTTPRequestHandler):
             except Exception as e:
                 self.send_error(404, f"GLB file not found: {e}")
         else:
-            self.send_error(404, "Not Found")
+            super().do_GET()
+
 
 def start_generic_http_server():
     global generic_http_server, generic_http_server_thread
