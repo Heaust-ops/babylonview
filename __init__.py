@@ -506,6 +506,9 @@ class ReusableTCPServer(socketserver.TCPServer):
     allow_reuse_address = True
 
 class GenericHTTPRequestHandler(http.server.SimpleHTTPRequestHandler):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, directory=script_dir, **kwargs)
+    
     def do_GET(self):
         if self.path == "/scene.glb":
             try:
@@ -593,5 +596,4 @@ def unregister():
 
 bpy.app.debug = True
 if __name__ == "__main__":
-    os.chdir(script_dir)
     register()
