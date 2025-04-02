@@ -1,9 +1,8 @@
 import {
-  AppendSceneAsync,
   ArcRotateCamera,
   Color4,
   Engine,
-  HemisphericLight,
+  LoadSceneAsync,
   Scene,
   Vector3,
 } from "@babylonjs/core";
@@ -13,11 +12,24 @@ class App {
   scene: Scene;
   private canvas: HTMLCanvasElement;
 
+  cameraBackup: {
+    alpha: number;
+    beta: number;
+    target: Vector3;
+    radius: number;
+  } | null;
+
   constructor(canvas: HTMLCanvasElement) {
     this.canvas = canvas;
     this.engine = new Engine(this.canvas, true);
+
+    this.engine.displayLoadingUI = function () {};
+    this.engine.hideLoadingUI = function () {};
+
     this.scene = new Scene(this.engine);
-    this.initScene();
+    this.cameraBackup = null;
+
+    this.initScene(this.scene);
 
     this.engine.runRenderLoop(() => {
       this.scene.render();
@@ -28,8 +40,8 @@ class App {
     });
   }
 
-  private initScene(): void {
-    this.scene.clearColor = new Color4(0, 0, 0, 1);
+  private initScene(scene: Scene): void {
+    scene.clearColor = new Color4(0, 0, 0, 1);
 
     const camera = new ArcRotateCamera(
       "camera",
@@ -37,21 +49,44 @@ class App {
       Math.PI / 4,
       10,
       Vector3.Zero(),
-      this.scene,
+      scene,
     );
 
-    const hemiLight = new HemisphericLight(
-      "hemiLight",
-      new Vector3(0, 1, 0),
-      this.scene,
-    );
-    hemiLight.intensity = 0.01;
+    if (!this.cameraBackup) {
+      this.cameraBackup = {
+        alpha: 0,
+        beta: 0,
+        target: Vector3.Zero(),
+        radius: 0,
+      };
+
+      if (scene.cameras.length) {
+        camera.position = scene.cameras[0].position;
+        camera.rotationQuaternion = scene.cameras[0].absoluteRotation;
+      }
+    } else {
+      camera.alpha = this.cameraBackup.alpha;
+      camera.beta = this.cameraBackup.beta;
+      camera.target = this.cameraBackup.target;
+      camera.radius = this.cameraBackup.radius;
+    }
+
+    camera.onViewMatrixChangedObservable.add(() => {
+      this.cameraBackup!.alpha = camera.alpha;
+      this.cameraBackup!.beta = camera.beta;
+      this.cameraBackup!.target = camera.target;
+      this.cameraBackup!.radius = camera.radius;
+    });
 
     camera.attachControl(this.canvas, true);
   }
 
   public async syncFromGlb(url: string): Promise<void> {
-    await AppendSceneAsync(url, this.scene);
+    const scene = await LoadSceneAsync(url, this.engine);
+    this.scene.dispose();
+    this.initScene(scene);
+    this.scene = scene;
+    (window as any).scene = scene;
   }
 }
 

@@ -8,10 +8,20 @@ import { Comms } from "./websocket/comms";
 const comms = new Comms("ws://localhost:8000");
 const app = new App(document.getElementById("babylon") as HTMLCanvasElement);
 
+try {
+  app.syncFromGlb("http://localhost:8001/scene.glb");
+} catch {
+  /** oh well */
+}
+
 comms.addMessageListener((msg) => {
   if (msg !== "sync glb") return;
   console.log("loading scene");
   app.syncFromGlb("http://localhost:8001/scene.glb");
+});
+
+document.getElementById("glb-sync")!.addEventListener("click", () => {
+  comms.send("sync glb");
 });
 
 /** for debug */

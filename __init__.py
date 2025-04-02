@@ -40,6 +40,7 @@ logger.addHandler(handler)
 # Global variables
 websocket_server = None
 server_thread = None
+server_loop = None
 is_running = False
 clients = {}
 message_handlers = []
@@ -335,19 +336,20 @@ def on_disconnect(handler):
     return handler
 
 async def run_server_async():
-    """Run the WebSocket server asynchronously."""
     global websocket_server, is_running
-    
     try:
         websocket_server = await asyncio.start_server(
             handle_client, "0.0.0.0", 8000
         )
-        
-        logger.info(f"Server started on 0.0.0.0:8000")
+        logger.info("Server started on 0.0.0.0:8000")
         is_running = True
         
         async with websocket_server:
-            await websocket_server.serve_forever()
+            try:
+                await websocket_server.serve_forever()
+            except asyncio.CancelledError:
+                logger.info("serve_forever cancelled, shutting down server.")
+                # This exception is expected during shutdown, so we simply exit the loop.
     except Exception as e:
         logger.error(f"Error running server: {e}")
     finally:
@@ -355,7 +357,9 @@ async def run_server_async():
 
 def server_thread_function():
     """Function to run in the server thread."""
+    global server_loop
     loop = asyncio.new_event_loop()
+    server_loop = loop
     asyncio.set_event_loop(loop)
     loop.run_until_complete(run_server_async())
     loop.close()
@@ -369,24 +373,26 @@ def start_server():
         server_thread = threading.Thread(target=server_thread_function, daemon=True)
         server_thread.start()
 
+async def close_server():
+    global websocket_server
+    if websocket_server is not None:
+        websocket_server.close()
+        await websocket_server.wait_closed()
+
 def stop_server():
-    """Stop the WebSocket server."""
-    global websocket_server, is_running
-    
-    if is_running and websocket_server:
+    global websocket_server, is_running, server_loop
+
+    if is_running and websocket_server and server_loop:
         logger.info("Stopping WebSocket server...")
-        
-        # Create a new event loop for this thread to run the stop task
-        loop = asyncio.new_event_loop()
-        asyncio.set_event_loop(loop)
-        
-        async def close_server():
-            websocket_server.close()
-            await websocket_server.wait_closed()
-            
-        loop.run_until_complete(close_server())
-        loop.close()
-        
+
+        # Schedule the close coroutine on the server's event loop
+        future = asyncio.run_coroutine_threadsafe(close_server(), server_loop)
+        try:
+            # Wait for the coroutine to finish (adjust timeout as needed)
+            future.result(timeout=5)
+        except Exception as e:
+            logger.error(f"Error stopping server: {e}")
+
         is_running = False
         logger.info("WebSocket server stopped")
 
@@ -416,7 +422,10 @@ def export_glb(filepath, export_settings={}):
         base_settings = {
             "filepath": filepath,
             "export_import_convert_lighting_mode": "COMPAT",
-            "export_draco_mesh_compression_enable": False
+            "export_draco_mesh_compression_enable": False,
+            "export_apply": True,
+            "export_lights": True,
+            "export_cameras": True
         }
         
         # Update base settings with user settings
@@ -546,10 +555,11 @@ class ToggleServerOperator(bpy.types.Operator):
 
     def execute(self, context):
         if is_running:
-            stop_server()
             stop_generic_http_server()
+            stop_server()
             self.report({'INFO'}, "Stopped Babylon.js View Server!")
         else:
+            export_glb(glb_path)
             start_server()
             start_generic_http_server()
             self.report({'INFO'}, "Started Babylon.js View Server!")
@@ -575,8 +585,8 @@ def register():
 
 def unregister():
     if is_running:
-        stop_server()
         stop_generic_http_server()
+        stop_server()
     for cls in reversed(classes):
         bpy.utils.unregister_class(cls)
 
