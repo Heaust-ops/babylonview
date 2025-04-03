@@ -10,7 +10,8 @@ from .globals import GLB_PATH
 from .http_server import start_generic_http_server
 from .http_server import stop_generic_http_server
 from .glb_exporter import export_glb
-from .socket_server import *
+from .socket_server import on_connect, on_disconnect, on_message, send_message_async, stop_socket_server, start_socket_server, broadcast
+from .unique_id import BlenderUniqueId
 
 import asyncio
 import bpy # type: ignore
@@ -53,20 +54,30 @@ def handle_disconnect(client_id):
 SOCKET HANDLERS END
 """
 
+"""
+GUI START
+"""
+
+is_running = False
 class ToggleServerOperator(bpy.types.Operator):
     """Start / Stop Server"""
+    global is_running
+    
     bl_idname = "toggle_server.server_custom"
     bl_label = "Toggle Babylon.js Server"
 
     def execute(self, context):
+        global is_running
         if is_running:
             stop_generic_http_server()
-            stop_server()
+            stop_socket_server()
+            is_running = False
             self.report({'INFO'}, "Stopped Babylon.js View Server!")
         else:
             export_glb(bpy, GLB_PATH)
-            start_server()
+            start_socket_server()
             start_generic_http_server()
+            is_running = True
             self.report({'INFO'}, "Started Babylon.js View Server!")
         return {'FINISHED'}
 
@@ -84,16 +95,30 @@ class ToggleServerPanel(bpy.types.Panel):
 # Register/unregister functions
 classes = (ToggleServerOperator, ToggleServerPanel)
 
+"""
+GUI END 
+"""
+
 def register():
     for cls in classes:
         bpy.utils.register_class(cls)
 
+    # inits
+    BlenderUniqueId.add_unique_id_handler(bpy)
+
 def unregister():
+    global is_running
+    
     if is_running:
         stop_generic_http_server()
-        stop_server()
+        stop_socket_server()
+        is_running = False
+    
     for cls in reversed(classes):
         bpy.utils.unregister_class(cls)
+
+    # cleanups
+    BlenderUniqueId.remove_unique_id_handler(bpy)
 
 bpy.app.debug = True
 if __name__ == "__main__":

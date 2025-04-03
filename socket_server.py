@@ -305,7 +305,7 @@ def server_thread_function():
     loop.run_until_complete(run_server_async())
     loop.close()
 
-def start_server():
+def start_socket_server():
     """Start the WebSocket server in a separate thread."""
     global server_thread, is_running
     
@@ -320,7 +320,7 @@ async def close_server():
         websocket_server.close()
         await websocket_server.wait_closed()
 
-def stop_server():
+def stop_socket_server():
     global websocket_server, is_running, server_loop
 
     if is_running and websocket_server and server_loop:
