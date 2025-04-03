@@ -13,7 +13,7 @@ from .glb_exporter import export_glb
 from .socket_server import *
 
 import asyncio
-import bpy
+import bpy # type: ignore
 
 def scheduled_export_glb():
     export_glb(bpy, GLB_PATH)
