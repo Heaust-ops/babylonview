@@ -1,0 +1,16 @@
+{
+  "include": [
+    "./globals.py",
+    "./",
+    "./http_server.py",
+    "./socket_server.py",
+    "./glb_exporter.py"
+  ],
+  "extraPaths": [
+    "./globals.py",
+    "./",
+    "./http_server.py",
+    "./socket_server.py",
+    "./glb_exporter.py"
+  ]
+}
