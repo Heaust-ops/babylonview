@@ -72,3 +72,8 @@ body {
 #dock ul li:active {
   background: #1e1e1e;
 }
+
+#inspector-toggle li img {
+  filter: brightness(0);
+  transform: scale(0.75);
+}

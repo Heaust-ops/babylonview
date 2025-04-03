@@ -14,6 +14,11 @@
   },
   "dependencies": {
     "@babylonjs/core": "^8.0.1",
-    "@babylonjs/loaders": "^8.0.2"
+    "@babylonjs/gui": "^8.1.0",
+    "@babylonjs/gui-editor": "^8.1.0",
+    "@babylonjs/inspector": "^8.1.0",
+    "@babylonjs/loaders": "^8.0.2",
+    "@babylonjs/materials": "^8.1.0",
+    "@babylonjs/serializers": "^8.1.0"
   }
 }

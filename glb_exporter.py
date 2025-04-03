@@ -5,7 +5,8 @@ GLB_SETTINGS = {
     "export_draco_mesh_compression_enable": False,
     "export_apply": True,
     "export_lights": True,
-    "export_cameras": True
+    "export_cameras": True,
+    "export_extras": True
 }
 
 def export_glb(bpy, filepath, export_settings={}):

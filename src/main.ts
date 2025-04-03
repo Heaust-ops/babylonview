@@ -14,6 +14,9 @@ try {
   /** oh well */
 }
 
+/**
+ * GLB SYNC
+ */
 comms.addMessageListener((msg) => {
   if (msg !== "sync glb") return;
   console.log("loading scene");
@@ -22,6 +25,26 @@ comms.addMessageListener((msg) => {
 
 document.getElementById("glb-sync")!.addEventListener("click", () => {
   comms.send("sync glb");
+});
+
+/**
+ * INSPECTOR TOGGLE
+ */
+let isInspector = false;
+document.getElementById("inspector-toggle")!.addEventListener("click", () => {
+  if (!isInspector) {
+    app.inspector.show();
+    isInspector = true;
+    return;
+  }
+
+  app.inspector.hide();
+  isInspector = false;
+});
+
+app.onNewSceneObservable.add(() => {
+  if (!isInspector) return;
+  app.inspector.show();
 });
 
 /** for debug */

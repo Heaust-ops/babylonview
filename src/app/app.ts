@@ -3,9 +3,11 @@ import {
   Color4,
   Engine,
   LoadSceneAsync,
+  Observable,
   Scene,
   Vector3,
 } from "@babylonjs/core";
+import { Inspector } from "@babylonjs/inspector";
 
 class App {
   engine: Engine;
@@ -19,12 +21,16 @@ class App {
     radius: number;
   } | null;
 
+  inspector: { show: () => void; hide: () => void };
+
+  onNewSceneObservable = new Observable<Scene>();
+
   constructor(canvas: HTMLCanvasElement) {
     this.canvas = canvas;
     this.engine = new Engine(this.canvas, true);
 
-    this.engine.displayLoadingUI = function () {};
-    this.engine.hideLoadingUI = function () {};
+    this.engine.displayLoadingUI = function () { };
+    this.engine.hideLoadingUI = function () { };
 
     this.scene = new Scene(this.engine);
     this.cameraBackup = null;
@@ -38,6 +44,17 @@ class App {
     window.addEventListener("resize", () => {
       this.engine.resize();
     });
+
+    this.inspector = {
+      show: () => {
+        Inspector.Show(this.scene, {
+          embedMode: true,
+        });
+      },
+      hide: () => {
+        Inspector.Hide();
+      },
+    };
   }
 
   private initScene(scene: Scene): void {
@@ -83,10 +100,17 @@ class App {
 
   public async syncFromGlb(url: string): Promise<void> {
     const scene = await LoadSceneAsync(url, this.engine);
+
+    this.scene.onDisposeObservable.add(() => {
+      this.inspector.hide();
+    });
     this.scene.dispose();
+
     this.initScene(scene);
     this.scene = scene;
     (window as any).scene = scene;
+
+    this.onNewSceneObservable.notifyObservers(scene);
   }
 }
 
