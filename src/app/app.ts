@@ -1,5 +1,6 @@
 import {
   ArcRotateCamera,
+  Camera,
   Color4,
   Engine,
   LoadSceneAsync,
@@ -9,6 +10,7 @@ import {
 } from "@babylonjs/core";
 import { Inspector } from "@babylonjs/inspector";
 import { BlenderId } from "./blenderId";
+import { PostProcessManager } from "../postprocess/postprocess";
 class App {
   engine: Engine;
   scene: Scene;
@@ -26,6 +28,22 @@ class App {
   onNewSceneObservable = new Observable<Scene>();
   blenderId: BlenderId;
 
+  clearColor = new Color4(0, 0, 0, 1);
+  private _useClearColorFromPost = true;
+  get useClearColorFromPost() {
+    return this._useClearColorFromPost;
+  }
+  set useClearColorFromPost(arg: boolean) {
+    if (!arg) {
+      this.scene.clearColor = this.clearColor.clone();
+      this.clearColor = new Color4(0, 0, 0, 1);
+    } else {
+      this.clearColor = this.scene.clearColor.clone();
+      this.scene.clearColor = new Color4(0, 0, 0, 1);
+    }
+    this._useClearColorFromPost = arg;
+  }
+
   private sceneDirty = false;
   isSceneDirty() {
     return this.sceneDirty;
@@ -42,6 +60,12 @@ class App {
 
     this.scene = new Scene(this.engine);
     this.cameraBackup = null;
+
+    this.onNewSceneObservable.add(() => {
+      this.scene.onNewCameraAddedObservable.add((camera) => {
+        PostProcessManager.init(this.scene, camera, this);
+      });
+    });
 
     this.initScene(this.scene);
 
@@ -111,6 +135,7 @@ class App {
 
     const scene = await LoadSceneAsync(url, this.engine);
     this.blenderId.refresh(scene);
+    scene.imageProcessingConfiguration.isEnabled = false;
 
     this.scene.onDisposeObservable.add(() => {
       this.inspector.hide();

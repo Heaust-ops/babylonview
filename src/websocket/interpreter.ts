@@ -59,12 +59,20 @@ class SocketInterpreter {
           msg_rev.pop() as string,
         ).asArray();
 
+        const setCC = () => {
+          if (this.app.useClearColorFromPost) {
+            this.app.clearColor = new Color4(...colorArr, 1);
+          } else {
+            this.app.scene.clearColor = new Color4(...colorArr, 1);
+          }
+        };
+
         if (this.app.isSceneDirty()) {
           this.app.onNewSceneObservable.addOnce(() => {
-            this.app.scene.clearColor = new Color4(...colorArr, 1);
+            setCC();
           });
         } else {
-          this.app.scene.clearColor = new Color4(...colorArr, 1);
+          setCC();
         }
         break;
     }
