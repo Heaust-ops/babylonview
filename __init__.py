@@ -23,10 +23,13 @@ with open(COMMANDS_JSON_PATH, 'r') as file:
     socket_commands_to_id = json.load(file)
     socket_commands_from_id = {v: k for k, v in socket_commands_to_id.items()}
 
+def broadcast_world_color():
+    broadcast([socket_commands_to_id["update world color"], Color.get_world_color(bpy)])
+
 def scheduled_export_glb():
     export_glb(bpy, GLB_PATH)
     broadcast(socket_commands_to_id["sync glb"])
-    broadcast([socket_commands_to_id["update world color"], Color.get_world_color(bpy)])
+    broadcast_world_color()
     return None  # Return None to unregister the timer
 
 """
@@ -52,6 +55,8 @@ def handle_message(client_id, message):
 
     if msg[0] == "sync glb":
         bpy.app.timers.register(scheduled_export_glb)
+    if msg[0] == "update world color":
+        bpy.app.timers.register(broadcast_world_color)
         
     # Echo back to the client
     asyncio.run_coroutine_threadsafe(

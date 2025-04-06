@@ -15,6 +15,7 @@ const main = async () => {
 
   try {
     app.syncFromGlb("http://localhost:8001/scene.glb");
+    interpreter.send("update world color");
   } catch {
     /** oh well */
   }
