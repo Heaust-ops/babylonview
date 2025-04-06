@@ -1,6 +1,5 @@
 import {
   ArcRotateCamera,
-  Camera,
   Color4,
   Engine,
   LoadSceneAsync,
