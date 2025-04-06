@@ -5,7 +5,8 @@
     "./http_server.py",
     "./socket_server.py",
     "./glb_exporter.py",
-    "./unique_id.py"
+    "./unique_id.py",
+    "./color.py"
   ],
   "extraPaths": [
     "./globals.py",
@@ -13,6 +14,7 @@
     "./http_server.py",
     "./socket_server.py",
     "./glb_exporter.py",
-    "./unique_id.py"
+    "./unique_id.py",
+    "./color.py"
   ]
 }

@@ -1,5 +1,7 @@
 import os
 
+from .unique_id import BlenderUniqueId
+
 GLB_SETTINGS = {
     "export_import_convert_lighting_mode": "COMPAT",
     "export_draco_mesh_compression_enable": False,
@@ -30,7 +32,8 @@ def export_glb(bpy, filepath, export_settings={}):
         print("\nGLB Export Settings:")
         for key, value in final_settings.items():
             print(f"  {key}: {value} ({type(value).__name__})")
-        
+
+        BlenderUniqueId.ensure_unique_id_on_all(bpy)
         result = bpy.ops.export_scene.gltf(**final_settings)
         success = (result == {'FINISHED'})
         

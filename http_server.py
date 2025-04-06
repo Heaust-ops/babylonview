@@ -6,6 +6,7 @@ import socketserver
 from .globals import SCRIPT_DIR
 from .globals import GLB_PATH
 from .globals import HTTP_PORT
+from .globals import COMMANDS_JSON_PATH
 
 generic_http_server = None
 generic_http_server_thread = None
@@ -23,6 +24,18 @@ class GenericHTTPRequestHandler(http.server.SimpleHTTPRequestHandler):
                 with open(GLB_PATH, "rb") as f:
                     self.send_response(200)
                     self.send_header("Content-Type", "model/gltf-binary")
+                    self.send_header("Access-Control-Allow-Origin", "*")
+                    fs = os.fstat(f.fileno())
+                    self.send_header("Content-Length", str(fs.st_size))
+                    self.end_headers()
+                    self.wfile.write(f.read())
+            except Exception as e:
+                self.send_error(404, f"GLB file not found: {e}")
+        elif self.path == "/commands.json":
+            try:
+                with open(COMMANDS_JSON_PATH, "rb") as f:
+                    self.send_response(200)
+                    self.send_header("Content-Type", "application/json")
                     self.send_header("Access-Control-Allow-Origin", "*")
                     fs = os.fstat(f.fileno())
                     self.send_header("Content-Length", str(fs.st_size))

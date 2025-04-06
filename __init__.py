@@ -6,19 +6,27 @@ bl_info = {
     "description": "I wonder how this looks in babylonjs",
 }
 
-from .globals import GLB_PATH
+from .globals import GLB_PATH, COMMANDS_JSON_PATH
 from .http_server import start_generic_http_server
 from .http_server import stop_generic_http_server
 from .glb_exporter import export_glb
 from .socket_server import on_connect, on_disconnect, on_message, send_message_async, stop_socket_server, start_socket_server, broadcast
 from .unique_id import BlenderUniqueId
+from .color import Color
+import json
 
 import asyncio
 import bpy # type: ignore
 
+with open(COMMANDS_JSON_PATH, 'r') as file:
+    global socket_commands_to_id, socket_commands_from_id
+    socket_commands_to_id = json.load(file)
+    socket_commands_from_id = {v: k for k, v in socket_commands_to_id.items()}
+
 def scheduled_export_glb():
     export_glb(bpy, GLB_PATH)
-    broadcast("sync glb")
+    broadcast(socket_commands_to_id["sync glb"])
+    broadcast([socket_commands_to_id["update world color"], Color.get_world_color(bpy)])
     return None  # Return None to unregister the timer
 
 """
@@ -33,9 +41,16 @@ def handle_connect(client_id):
 
 @on_message
 def handle_message(client_id, message):
-    print(f"Message from {client_id}: {message}")
+    msg = json.loads(message)
+    if msg[0] not in socket_commands_from_id:
+        print(f"Message from {client_id}: {msg}")
+        print("malformed message, ignoring:")
+        return
+    
+    msg[0] = socket_commands_from_id[msg[0]]
+    print(f"Message from {client_id}: {msg}")
 
-    if message == "sync glb":
+    if msg[0] == "sync glb":
         bpy.app.timers.register(scheduled_export_glb)
         
     # Echo back to the client

@@ -259,7 +259,7 @@ async def broadcast_async(message, exclude=None):
 def broadcast(message, exclude=None):
     """Non-async wrapper for broadcast_async."""
     loop = asyncio.get_event_loop()
-    return loop.run_until_complete(broadcast_async(message, exclude))
+    return loop.run_until_complete(broadcast_async(json.dumps(message), exclude))
 
 def on_message(handler):
     """Register a handler for incoming messages."""

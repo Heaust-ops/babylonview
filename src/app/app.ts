@@ -8,7 +8,7 @@ import {
   Vector3,
 } from "@babylonjs/core";
 import { Inspector } from "@babylonjs/inspector";
-
+import { BlenderId } from "./blenderId";
 class App {
   engine: Engine;
   scene: Scene;
@@ -24,13 +24,21 @@ class App {
   inspector: { show: () => void; hide: () => void };
 
   onNewSceneObservable = new Observable<Scene>();
+  blenderId: BlenderId;
+
+  private sceneDirty = false;
+  isSceneDirty() {
+    return this.sceneDirty;
+  }
 
   constructor(canvas: HTMLCanvasElement) {
     this.canvas = canvas;
     this.engine = new Engine(this.canvas, true);
 
-    this.engine.displayLoadingUI = function () { };
-    this.engine.hideLoadingUI = function () { };
+    this.engine.displayLoadingUI = function () {};
+    this.engine.hideLoadingUI = function () {};
+
+    this.blenderId = new BlenderId();
 
     this.scene = new Scene(this.engine);
     this.cameraBackup = null;
@@ -99,7 +107,10 @@ class App {
   }
 
   public async syncFromGlb(url: string): Promise<void> {
+    this.sceneDirty = true;
+
     const scene = await LoadSceneAsync(url, this.engine);
+    this.blenderId.refresh(scene);
 
     this.scene.onDisposeObservable.add(() => {
       this.inspector.hide();
@@ -109,6 +120,8 @@ class App {
     this.initScene(scene);
     this.scene = scene;
     (window as any).scene = scene;
+
+    this.sceneDirty = false;
 
     this.onNewSceneObservable.notifyObservers(scene);
   }
