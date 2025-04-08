@@ -17,9 +17,8 @@ class RealtimeSync {
   }
 
   applyTransforms(id: number, pos: number[], scale: number[], q: number[]) {
-    console.log(id, pos, scale, q);
-
     const obj = this.app.blenderId.get(id);
+    if (!obj) return;
 
     obj.position.x = pos[0];
     obj.position.y = pos[1];
