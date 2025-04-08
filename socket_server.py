@@ -122,7 +122,7 @@ async def receive_message(reader):
     if masked:
         unmasked = bytearray(payload_length)
         for i in range(payload_length):
-            unmasked[i] = payload[i] ^ mask[i % 4]
+            unmasked[i] = payload[i] ^ mask[i % 4] # type: ignore
         payload = unmasked
     
     # Convert to string for text frames
