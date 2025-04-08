@@ -6,29 +6,25 @@ bl_info = {
     "description": "I wonder how this looks in babylonjs",
 }
 
-from .globals import GLB_PATH, COMMANDS_JSON_PATH
+from .globals import GLB_PATH, SOCKET_COMMANDS_FROM_ID, SOCKET_COMMANDS_TO_ID
 from .http_server import start_generic_http_server
 from .http_server import stop_generic_http_server
 from .glb_exporter import export_glb
 from .socket_server import on_connect, on_disconnect, on_message, send_message_async, stop_socket_server, start_socket_server, broadcast
-from .unique_id import BlenderUniqueId
 from .color import Color
+from .realtime_sync import RealtimeSync
 import json
 
 import asyncio
 import bpy # type: ignore
 
-with open(COMMANDS_JSON_PATH, 'r') as file:
-    global socket_commands_to_id, socket_commands_from_id
-    socket_commands_to_id = json.load(file)
-    socket_commands_from_id = {v: k for k, v in socket_commands_to_id.items()}
 
 def broadcast_world_color():
-    broadcast([socket_commands_to_id["update world color"], Color.get_world_color(bpy)])
+    broadcast([SOCKET_COMMANDS_TO_ID["update world color"], Color.get_world_color(bpy)])
 
 def scheduled_export_glb():
     export_glb(bpy, GLB_PATH)
-    broadcast(socket_commands_to_id["sync glb"])
+    broadcast(SOCKET_COMMANDS_TO_ID["sync glb"])
     broadcast_world_color()
     return None  # Return None to unregister the timer
 
@@ -45,18 +41,20 @@ def handle_connect(client_id):
 @on_message
 def handle_message(client_id, message):
     msg = json.loads(message)
-    if msg[0] not in socket_commands_from_id:
+    if msg[0] not in SOCKET_COMMANDS_FROM_ID:
         print(f"Message from {client_id}: {msg}")
         print("malformed message, ignoring:")
         return
     
-    msg[0] = socket_commands_from_id[msg[0]]
+    msg[0] = SOCKET_COMMANDS_FROM_ID[msg[0]]
     print(f"Message from {client_id}: {msg}")
 
     if msg[0] == "sync glb":
         bpy.app.timers.register(scheduled_export_glb)
     if msg[0] == "update world color":
         bpy.app.timers.register(broadcast_world_color)
+    if msg[0] == "realtime sync":
+        RealtimeSync.isEnabled = msg[1] == 1
         
     # Echo back to the client
     asyncio.run_coroutine_threadsafe(
@@ -89,12 +87,14 @@ class ToggleServerOperator(bpy.types.Operator):
     def execute(self, context):
         global is_running
         if is_running:
+            RealtimeSync.detach(bpy)
             stop_generic_http_server()
             stop_socket_server()
             is_running = False
             self.report({'INFO'}, "Stopped Babylon.js View Server!")
         else:
             export_glb(bpy, GLB_PATH)
+            RealtimeSync.attach(bpy)
             start_socket_server()
             start_generic_http_server()
             is_running = True
@@ -123,9 +123,6 @@ def register():
     for cls in classes:
         bpy.utils.register_class(cls)
 
-    # inits
-    BlenderUniqueId.add_unique_id_handler(bpy)
-
 def unregister():
     global is_running
     
@@ -136,9 +133,6 @@ def unregister():
     
     for cls in reversed(classes):
         bpy.utils.unregister_class(cls)
-
-    # cleanups
-    BlenderUniqueId.remove_unique_id_handler(bpy)
 
 bpy.app.debug = True
 if __name__ == "__main__":

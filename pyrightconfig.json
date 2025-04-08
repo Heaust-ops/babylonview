@@ -6,7 +6,8 @@
     "./socket_server.py",
     "./glb_exporter.py",
     "./unique_id.py",
-    "./color.py"
+    "./color.py",
+    "./realtime_sync.py"
   ],
   "extraPaths": [
     "./globals.py",
@@ -15,6 +16,7 @@
     "./socket_server.py",
     "./glb_exporter.py",
     "./unique_id.py",
-    "./color.py"
+    "./color.py",
+    "./realtime_sync.py"
   ]
 }

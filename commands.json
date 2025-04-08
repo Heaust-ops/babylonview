@@ -1,4 +1,6 @@
 {
   "sync glb": 0,
-  "update world color": 1
+  "update world color": 1,
+  "realtime sync": 2,
+  "transform update": 3
 }

@@ -1,6 +1,7 @@
 import { Color3, Color4 } from "@babylonjs/core";
 import { App } from "../app/app";
 import { Comms } from "./comms";
+import { RealtimeSync } from "./realtimeSync";
 
 class SocketInterpreter {
   app: App;
@@ -9,12 +10,16 @@ class SocketInterpreter {
   socketCommandToId: Record<string, string | number>;
   socketCommandFromId: Record<string | number, string>;
 
+  rtSync: RealtimeSync;
+
   constructor(app: App, comms: Comms) {
     this.app = app;
     this.comms = comms;
 
     this.socketCommandToId = {};
     this.socketCommandFromId = {};
+
+    this.rtSync = new RealtimeSync(app, this);
 
     comms.addMessageListener((msg) => {
       if (msg.startsWith("Echo")) return;
@@ -38,7 +43,7 @@ class SocketInterpreter {
     this.comms.send(serialized);
   }
 
-  interpret(msg: Array<string | number> | string | number) {
+  interpret(msg: Array<any> | string | number) {
     if (!(msg instanceof Array)) msg = [msg];
 
     const msg_rev = msg.reverse();
@@ -74,6 +79,14 @@ class SocketInterpreter {
         } else {
           setCC();
         }
+        break;
+      case "transform update":
+        this.rtSync.applyTransforms(
+          msg_rev.pop(),
+          msg_rev.pop(),
+          msg_rev.pop(),
+          msg_rev.pop(),
+        );
         break;
     }
   }
