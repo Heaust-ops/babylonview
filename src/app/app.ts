@@ -27,6 +27,9 @@ class App {
   onNewSceneObservable = new Observable<Scene>();
   blenderId: BlenderId;
 
+  useAGXTonemapping = true;
+  AGXTonemappingExposure = 1;
+
   clearColor = new Color4(0, 0, 0, 1);
   private _useClearColorFromPost = true;
   get useClearColorFromPost() {
@@ -46,6 +49,10 @@ class App {
   private sceneDirty = false;
   isSceneDirty() {
     return this.sceneDirty;
+  }
+
+  private getRenderFunction() {
+    return () => this.scene.render();
   }
 
   constructor(canvas: HTMLCanvasElement) {
@@ -68,9 +75,7 @@ class App {
 
     this.initScene(this.scene);
 
-    this.engine.runRenderLoop(() => {
-      this.scene.render();
-    });
+    this.engine.runRenderLoop(this.getRenderFunction());
 
     window.addEventListener("resize", () => {
       this.engine.resize();
@@ -132,6 +137,8 @@ class App {
   public async syncFromGlb(url: string): Promise<void> {
     this.sceneDirty = true;
 
+    this.engine.stopRenderLoop();
+
     const scene = await LoadSceneAsync(url, this.engine);
     this.blenderId.refresh(scene);
     scene.imageProcessingConfiguration.isEnabled = false;
@@ -144,6 +151,10 @@ class App {
     this.initScene(scene);
     this.scene = scene;
     (window as any).scene = scene;
+
+    this.scene.onReadyObservable.addOnce(() => {
+      this.engine.runRenderLoop(this.getRenderFunction());
+    });
 
     this.sceneDirty = false;
 

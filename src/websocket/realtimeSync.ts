@@ -17,6 +17,11 @@ class RealtimeSync {
   }
 
   applyTransforms(id: number, pos: number[], scale: number[], q: number[]) {
+    if (!this.isEnabled) {
+      this.interpreter.send(["realtime sync", 0]);
+      return;
+    }
+
     const obj = this.app.blenderId.get(id);
     if (!obj) return;
 

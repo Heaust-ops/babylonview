@@ -1,10 +1,14 @@
 class Comms {
-  private socket: WebSocket;
+  private socket!: WebSocket;
   private messageListeners: Array<(msg: string) => void> = [];
   private messageQueue: string[] = [];
   private isOpen: boolean = false;
 
   constructor(url: string) {
+    this.connect(url);
+  }
+
+  connect(url: string) {
     this.socket = new WebSocket(url);
 
     this.socket.addEventListener("open", () => {
@@ -26,10 +30,16 @@ class Comms {
     this.socket.addEventListener("close", () => {
       console.log("WebSocket closed.");
       this.isOpen = false;
+      setTimeout(() => {
+        if (this.isOpen) return;
+        this.socket.close();
+        this.connect(url);
+      }, 1000);
     });
 
     this.socket.addEventListener("error", (error) => {
       console.error("WebSocket error:", error);
+      this.socket.close();
     });
   }
 
