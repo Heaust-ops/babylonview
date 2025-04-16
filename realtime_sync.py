@@ -1,3 +1,4 @@
+from .unique_id import BlenderUniqueId
 from .globals import SOCKET_COMMANDS_TO_ID
 from .socket_server import broadcast
 
@@ -15,11 +16,13 @@ class RealtimeSync:
                 if isinstance(update.id, bpy.types.Object) and update.is_updated_transform:
                     obj = update.id
                     
-                    pos = [round(v, 5) for v in obj.location]
-                    scale = [round(v, 5) for v in obj.scale]
-                    q = [round(v, 5) for v in obj.rotation_quaternion]
+                    matrix = obj.matrix_world
                     
-                    broadcast([SOCKET_COMMANDS_TO_ID["transform update"], obj.original.as_pointer(), pos, scale, q])
+                    pos = list(matrix.to_translation())
+                    scale = list(matrix.to_scale())
+                    q = list(matrix.to_quaternion())
+                    
+                    broadcast([SOCKET_COMMANDS_TO_ID["transform update"], obj.name_full, pos, scale, q])
         return handler
 
     @staticmethod

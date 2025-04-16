@@ -12,4 +12,5 @@ class BlenderUniqueId():
     def assign_unique_id_if_not_present(obj):
         if "blenderUniqueId" in obj:
             return
-        obj["blenderUniqueId"] = str(obj.as_pointer())
+        
+        obj["blenderUniqueId"] = obj.name_full

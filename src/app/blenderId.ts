@@ -1,17 +1,15 @@
 import { AbstractMesh, Scene } from "@babylonjs/core";
 
 class BlenderId {
-  private map = {} as Record<number, AbstractMesh>;
+  private map = {} as Record<string, AbstractMesh>;
   refresh(scene: Scene) {
     this.map = {};
     scene.meshes.forEach((m) => {
-      const blenderUniqueId = m.metadata?.gltf?.extras?.blenderUniqueId;
-      if (!blenderUniqueId) return;
-      this.map[+blenderUniqueId] = m;
+      this.map[m.name] = m;
     });
   }
 
-  get(id: number) {
+  get(id: string) {
     return this.map[id];
   }
 }

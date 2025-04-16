@@ -98,12 +98,14 @@ class App {
 
     const camera = new ArcRotateCamera(
       "camera",
-      Math.PI / 2,
       Math.PI / 4,
+      (2 * Math.PI) / 3,
       10,
       Vector3.Zero(),
       scene,
     );
+
+    camera.upVector = new Vector3(0, 0, 1);
 
     if (!this.cameraBackup) {
       this.cameraBackup = {

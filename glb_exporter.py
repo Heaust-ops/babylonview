@@ -8,7 +8,8 @@ GLB_SETTINGS = {
     "export_apply": True,
     "export_lights": True,
     "export_cameras": True,
-    "export_extras": True
+    "export_extras": True,
+    "export_yup": False
 }
 
 def export_glb(bpy, filepath, export_settings={}):
