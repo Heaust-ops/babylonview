@@ -27,11 +27,11 @@ class App {
   onNewSceneObservable = new Observable<Scene>();
   blenderId: BlenderId;
 
-  useAGXTonemapping = true;
+  useAGXTonemapping = false;
   AGXTonemappingExposure = 1;
 
   clearColor = new Color4(0, 0, 0, 1);
-  private _useClearColorFromPost = true;
+  private _useClearColorFromPost = false;
   get useClearColorFromPost() {
     return this._useClearColorFromPost;
   }
