@@ -6,6 +6,9 @@ But I'd love for you to try this out and give me your thoughts :)
 
 Babylonjs discussion thread: [https://forum.babylonjs.com/t/a-blender-addon-for-babylonjs-scene-viewing/57580](https://forum.babylonjs.com/t/a-blender-addon-for-babylonjs-scene-viewing/57580).
 
+- [How to install](#how-to-install)
+- [How to use](#how-to-use)
+
 ## How to install
 
 ### Step 1: Download this repo as zip.
