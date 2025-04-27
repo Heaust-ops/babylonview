@@ -1,5 +1,8 @@
 import os
 
+from .tmpFolder import TmpFolder
+
+from .color import Color
 from .unique_id import BlenderUniqueId
 
 GLB_SETTINGS = {
@@ -23,6 +26,7 @@ def export_glb(bpy, filepath, export_settings={}):
     Returns:
         bool: True if export was successful, False otherwise
     """
+    TmpFolder.ensure()
     if os.path.exists(filepath):
         os.remove(filepath)
     
@@ -48,3 +52,77 @@ def export_glb(bpy, filepath, export_settings={}):
         import traceback
         traceback.print_exc()
         return False
+
+def export_extra_scene_data(bpy):
+    """
+    Gather extra scene data not covered by glTF export:
+      - AREA lights (name, full transform, size, color, energy, shape)
+      - World background (flat color or environment texture settings)
+    """
+    # Initialize default result
+    result = {
+        'areaLights': [],
+        'world': {'type': 'color', 'info': '#000000'}
+    }
+
+    # Get active scene
+    scene = bpy.context.scene
+    if scene is None:
+        return result
+
+    # Collect AREA-type lights
+    for obj in scene.objects:
+        if obj.type != 'LIGHT' or obj.data.type != 'AREA':
+            continue
+        ld = obj.data
+        # Decompose world matrix for full transform
+        matrix = obj.matrix_world
+        pos = list(matrix.to_translation())
+        scale = list(matrix.to_scale())
+        rot = list(matrix.to_quaternion())
+
+        result['areaLights'].append({
+            'name': obj.name,
+            'location': pos,
+            'scale': scale,
+            'rotation': rot,
+            'size': [ld.size, getattr(ld, 'size_y', ld.size)],
+            'color': '#{0:02x}{1:02x}{2:02x}'.format(
+                int(ld.color[0] * 255), int(ld.color[1] * 255), int(ld.color[2] * 255)
+            ),
+            'energy': ld.energy,
+            'shape': ld.shape
+        })
+
+    # World background
+    world = scene.world
+    if world is None:
+        return result
+
+    # Node-based world
+    if world.use_nodes and world.node_tree:
+        bg_node = next(
+            (n for n in world.node_tree.nodes if n.type == 'BACKGROUND'), None
+        )
+        if bg_node:
+            color_in = bg_node.inputs.get('Color')
+            if color_in and color_in.is_linked:
+                tex = color_in.links[0].from_node
+                if tex.type == 'TEX_ENVIRONMENT' and tex.image:
+                    img = tex.image
+                    image_path = TmpFolder.mirror(bpy.path.abspath(img.filepath))
+                    result['world'] = {
+                        'type': 'image',
+                        'info': [
+                            image_path,
+                            tex.interpolation,
+                            tex.projection,
+                            img.source,
+                            img.colorspace_settings.name,
+                            img.alpha_mode
+                        ]
+                    }
+                    return result
+
+    result['world'] = {'type': 'color', 'info': Color.get_world_color(bpy)}
+    return result

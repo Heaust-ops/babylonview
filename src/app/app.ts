@@ -99,8 +99,8 @@ class App {
     const camera = new ArcRotateCamera(
       "camera",
       Math.PI / 4,
-      (2 * Math.PI) / 3,
-      10,
+      Math.PI / 4,
+      25,
       Vector3.Zero(),
       scene,
     );

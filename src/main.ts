@@ -12,13 +12,7 @@ const main = async () => {
 
   const interpreter = new SocketInterpreter(app, comms);
   await interpreter.loadCommandsMap();
-
-  try {
-    app.syncFromGlb("http://localhost:8001/scene.glb");
-    interpreter.send("update world color");
-  } catch {
-    /** oh well */
-  }
+  interpreter.send("sync glb");
 
   document.getElementById("glb-sync")!.addEventListener("click", () => {
     interpreter.send("sync glb");

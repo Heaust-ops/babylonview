@@ -26,5 +26,6 @@ dist-ssr
 .venv
 
 tmp.glb
+tmp/
 
 __pycache__

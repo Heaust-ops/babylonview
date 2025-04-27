@@ -3,7 +3,7 @@ import http.server
 import threading
 import socketserver
 
-from .globals import SCRIPT_DIR
+from .globals import SCRIPT_DIR, TMP_PATH
 from .globals import GLB_PATH
 from .globals import HTTP_PORT
 from .globals import COMMANDS_JSON_PATH
@@ -18,13 +18,16 @@ class GenericHTTPRequestHandler(http.server.SimpleHTTPRequestHandler):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, directory=SCRIPT_DIR, **kwargs)
     
+    def send_response(self, code, message=None):
+        super().send_response(code, message)
+        self.send_header("Access-Control-Allow-Origin", "*")
+
     def do_GET(self):
         if self.path == "/scene.glb":
             try:
                 with open(GLB_PATH, "rb") as f:
                     self.send_response(200)
                     self.send_header("Content-Type", "model/gltf-binary")
-                    self.send_header("Access-Control-Allow-Origin", "*")
                     fs = os.fstat(f.fileno())
                     self.send_header("Content-Length", str(fs.st_size))
                     self.end_headers()
@@ -36,13 +39,25 @@ class GenericHTTPRequestHandler(http.server.SimpleHTTPRequestHandler):
                 with open(COMMANDS_JSON_PATH, "rb") as f:
                     self.send_response(200)
                     self.send_header("Content-Type", "application/json")
-                    self.send_header("Access-Control-Allow-Origin", "*")
                     fs = os.fstat(f.fileno())
                     self.send_header("Content-Length", str(fs.st_size))
                     self.end_headers()
                     self.wfile.write(f.read())
             except Exception as e:
-                self.send_error(404, f"GLB file not found: {e}")
+                self.send_error(404, f"Commands file not found: {e}")
+        elif self.path.startswith("/tmp/"):
+            file_path = os.path.join(SCRIPT_DIR, self.path[1:])  # Remove leading slash
+            try:
+                with open(file_path, "rb") as f:
+                    self.send_response(200)
+                    content_type = self.guess_type(file_path)
+                    self.send_header("Content-Type", content_type)
+                    fs = os.fstat(f.fileno())
+                    self.send_header("Content-Length", str(fs.st_size))
+                    self.end_headers()
+                    self.wfile.write(f.read())
+            except Exception as e:
+                self.send_error(404, f"File not found in tmp directory: {e}")
         else:
             super().do_GET()
 

@@ -1,7 +1,42 @@
-import { Color3, Color4 } from "@babylonjs/core";
+import {
+  Color3,
+  Color4,
+  EquiRectangularCubeTexture,
+  MeshBuilder,
+  PBRMaterial,
+  Quaternion,
+  RectAreaLight,
+  Scene,
+  Texture,
+  TransformNode,
+  Vector3,
+} from "@babylonjs/core";
 import { App } from "../app/app";
 import { Comms } from "./comms";
 import { RealtimeSync } from "./realtimeSync";
+import { exrToJpegBlobUrl } from "../conversion/image/imageConversions";
+
+type ExtraGLBData = {
+  areaLights: {
+    name: string;
+    color: string;
+    shape: string;
+    energy: number;
+    location: number[];
+    rotation: number[];
+    scale: number[];
+    size: [number, number];
+  }[];
+  world:
+    | {
+        type: "image";
+        info: string[];
+      }
+    | {
+        type: "color";
+        info: string;
+      };
+};
 
 class SocketInterpreter {
   app: App;
@@ -34,13 +69,87 @@ class SocketInterpreter {
 
     const command = this.socketCommandToId[commandArr[0]];
     if (typeof command === "undefined") {
-      console.error("malformed command");
+      console.error("malformed command: undefined");
     }
 
     commandArr[0] = command ?? commandArr[0];
 
     const serialized = JSON.stringify(commandArr);
     this.comms.send(serialized);
+  }
+
+  private async parseExtraData(scene: Scene, extraData: ExtraGLBData) {
+    /**
+     * World color / skyboxes
+     */
+    if (extraData.world.type === "color") {
+      const colorArr = Color3.FromHexString(extraData.world.info).asArray();
+
+      if (this.app.useClearColorFromPost) {
+        this.app.clearColor = new Color4(...colorArr, 1);
+      } else {
+        this.app.scene.clearColor = new Color4(...colorArr, 1);
+      }
+    }
+
+    if (extraData.world.type === "image") {
+      const [url, _, projection, __, ___, ____] = extraData.world.info;
+      if (projection === "EQUIRECTANGULAR") {
+        const jpegUrl = await exrToJpegBlobUrl(`http://localhost:8001/${url}`);
+
+        const eqTexture = new EquiRectangularCubeTexture(jpegUrl, scene, 1024);
+        scene.materials.forEach((mat) => {
+          if (!(mat instanceof PBRMaterial)) return;
+          if (mat.name === "skyBox") return;
+          mat.reflectionTexture = eqTexture;
+        });
+        scene.onNewMaterialAddedObservable.add((mat) => {
+          if (!(mat instanceof PBRMaterial)) return;
+          if (mat.name === "skyBox") return;
+          mat.reflectionTexture = eqTexture;
+        });
+
+        const hdrSkybox = MeshBuilder.CreateBox(
+          "hdrSkyBox",
+          { size: 1000.0 },
+          scene,
+        );
+        const hdrSkyboxMaterial = new PBRMaterial("skyBox", scene);
+        hdrSkyboxMaterial.backFaceCulling = false;
+        hdrSkyboxMaterial.reflectionTexture = eqTexture.clone();
+        hdrSkyboxMaterial.reflectionTexture.coordinatesMode =
+          Texture.SKYBOX_MODE;
+        hdrSkyboxMaterial.microSurface = 1.0;
+        hdrSkyboxMaterial.disableLighting = false;
+        hdrSkybox.material = hdrSkyboxMaterial;
+        hdrSkybox.infiniteDistance = true;
+        hdrSkybox.rotation.x = -Math.PI / 2;
+      }
+    }
+
+    /**
+     * Area Lights
+     */
+    extraData.areaLights.forEach((item) => {
+      const rectAreaLight = new RectAreaLight(
+        item.name,
+        Vector3.Zero(),
+        ...item.size,
+        scene,
+      );
+      const transformNode = new TransformNode(
+        item.name + ":__transform-helper__",
+      );
+      rectAreaLight.parent = transformNode;
+      rectAreaLight.intensity = item.energy / (4 * Math.PI);
+
+      const pos = Vector3.FromArray(item.location);
+      const q = Quaternion.FromArray(item.location);
+      const scale = Vector3.FromArray(item.scale);
+      transformNode.position = pos;
+      transformNode.rotationQuaternion = q;
+      transformNode.scaling = scale;
+    });
   }
 
   interpret(msg: Array<any> | string | number) {
@@ -57,28 +166,13 @@ class SocketInterpreter {
     const command = this.socketCommandFromId[cmdId];
     switch (command) {
       case "sync glb":
+        const extraData = msg_rev.pop();
+        this.app.onNewSceneObservable.addOnce(() => {
+          this.parseExtraData(this.app.scene, extraData);
+        });
         this.app.syncFromGlb("http://localhost:8001/scene.glb");
         break;
       case "update world color":
-        const colorArr = Color3.FromHexString(
-          msg_rev.pop() as string,
-        ).asArray();
-
-        const setCC = () => {
-          if (this.app.useClearColorFromPost) {
-            this.app.clearColor = new Color4(...colorArr, 1);
-          } else {
-            this.app.scene.clearColor = new Color4(...colorArr, 1);
-          }
-        };
-
-        if (this.app.isSceneDirty()) {
-          this.app.onNewSceneObservable.addOnce(() => {
-            setCC();
-          });
-        } else {
-          setCC();
-        }
         break;
       case "transform update":
         this.rtSync.applyTransforms(

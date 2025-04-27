@@ -9,16 +9,17 @@
     "preview": "vite preview"
   },
   "devDependencies": {
-    "typescript": "~5.7.2",
-    "vite": "^6.2.0"
+    "typescript": "~5.8.3",
+    "vite": "^6.3.3"
   },
   "dependencies": {
-    "@babylonjs/core": "^8.0.1",
-    "@babylonjs/gui": "^8.1.0",
-    "@babylonjs/gui-editor": "^8.1.0",
-    "@babylonjs/inspector": "^8.1.0",
-    "@babylonjs/loaders": "^8.0.2",
-    "@babylonjs/materials": "^8.1.0",
-    "@babylonjs/serializers": "^8.1.0"
+    "@babylonjs/core": "^8.4.0",
+    "@babylonjs/gui": "^8.4.0",
+    "@babylonjs/gui-editor": "^8.4.0",
+    "@babylonjs/inspector": "^8.4.0",
+    "@babylonjs/loaders": "^8.4.0",
+    "@babylonjs/materials": "^8.4.0",
+    "@babylonjs/serializers": "^8.4.0",
+    "parse-exr": "^1.0.1"
   }
 }
