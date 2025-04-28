@@ -95,9 +95,19 @@ class SocketInterpreter {
     if (extraData.world.type === "image") {
       const [url, _, projection, __, ___, ____] = extraData.world.info;
       if (projection === "EQUIRECTANGULAR") {
-        const jpegUrl = await exrToJpegBlobUrl(`http://localhost:8001/${url}`);
+        let jpegUrl = url;
+        if (url.toLowerCase().endsWith(".exr")) {
+          jpegUrl = await exrToJpegBlobUrl(`http://localhost:8001/${url}`);
+        }
 
         const eqTexture = new EquiRectangularCubeTexture(jpegUrl, scene, 1024);
+
+        // to follow blender's z-up coordinate system, this matrix = identity -> rotation.x of 90deg
+        (eqTexture.getReflectionTextureMatrix() as any)._m = new Float32Array([
+          1, 0, 0, 0, 0, 2.220446049250313e-16, 1, 0, 0, -1,
+          2.220446049250313e-16, 0, 12.5, -12.5, 17.677669525146484, 1,
+        ]);
+
         scene.materials.forEach((mat) => {
           if (!(mat instanceof PBRMaterial)) return;
           if (mat.name === "skyBox") return;
@@ -114,6 +124,7 @@ class SocketInterpreter {
           { size: 1000.0 },
           scene,
         );
+
         const hdrSkyboxMaterial = new PBRMaterial("skyBox", scene);
         hdrSkyboxMaterial.backFaceCulling = false;
         hdrSkyboxMaterial.reflectionTexture = eqTexture.clone();
@@ -123,7 +134,6 @@ class SocketInterpreter {
         hdrSkyboxMaterial.disableLighting = false;
         hdrSkybox.material = hdrSkyboxMaterial;
         hdrSkybox.infiniteDistance = true;
-        hdrSkybox.rotation.x = -Math.PI / 2;
       }
     }
 
