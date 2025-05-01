@@ -1,5 +1,7 @@
 import os
 
+from .globals import GLB_PATH
+
 from .tmpFolder import TmpFolder
 
 from .color import Color
@@ -15,7 +17,7 @@ GLB_SETTINGS = {
     "export_yup": False
 }
 
-def export_glb(bpy, filepath, export_settings={}):
+def export_glb(bpy, filepath = GLB_PATH, export_settings={}, names = None):
     """
     Export a Blender scene or selected objects to a GLB file.
     
@@ -33,6 +35,18 @@ def export_glb(bpy, filepath, export_settings={}):
     try:
         GLB_SETTINGS["filepath"] = filepath
         final_settings = {**GLB_SETTINGS, **export_settings}
+
+        # export only selected
+        original_selected = [obj for obj in bpy.context.selected_objects]
+        original_active = bpy.context.view_layer.objects.active
+
+        if names is not None:
+            bpy.ops.object.select_all(action='DESELECT')
+            for obj in bpy.context.scene.objects:
+                if obj.name in names:
+                    obj.select_set(True)
+            final_settings['use_selection'] = True
+        # ==== ==== ==== ====
         
         print("\nGLB Export Settings:")
         for key, value in final_settings.items():
@@ -44,6 +58,15 @@ def export_glb(bpy, filepath, export_settings={}):
         
         if not success:
             print(f"GLB Export failed with result: {result}")
+
+        # export only selected - restore selection
+        if names is not None:
+            bpy.ops.object.select_all(action='DESELECT')
+            for obj in original_selected:
+                obj.select_set(True)
+            if original_active:
+                bpy.context.view_layer.objects.active = original_active
+        # ==== ==== ==== ====
         
         return success
         

@@ -28,14 +28,14 @@ type ExtraGLBData = {
     size: [number, number];
   }[];
   world:
-    | {
-        type: "image";
-        info: string[];
-      }
-    | {
-        type: "color";
-        info: string;
-      };
+  | {
+    type: "image";
+    info: string[];
+  }
+  | {
+    type: "color";
+    info: string;
+  };
 };
 
 class SocketInterpreter {
@@ -58,6 +58,7 @@ class SocketInterpreter {
 
     comms.addMessageListener((msg) => {
       if (msg.startsWith("Echo")) return;
+      // console.log(JSON.parse(msg));
       this.interpret(JSON.parse(msg));
     });
   }
@@ -82,7 +83,7 @@ class SocketInterpreter {
     /**
      * World color / skyboxes
      */
-    if (extraData.world.type === "color") {
+    if (extraData.world?.type === "color") {
       const colorArr = Color3.FromHexString(extraData.world.info).asArray();
 
       if (this.app.useClearColorFromPost) {
@@ -92,7 +93,7 @@ class SocketInterpreter {
       }
     }
 
-    if (extraData.world.type === "image") {
+    if (extraData.world?.type === "image") {
       const [url, _, projection, __, ___, ____] = extraData.world.info;
       if (projection === "EQUIRECTANGULAR") {
         let jpegUrl = url;
@@ -182,8 +183,6 @@ class SocketInterpreter {
         });
         this.app.syncFromGlb("http://localhost:8001/scene.glb");
         break;
-      case "update world color":
-        break;
       case "transform update":
         this.rtSync.applyTransforms(
           msg_rev.pop(),
@@ -191,6 +190,13 @@ class SocketInterpreter {
           msg_rev.pop(),
           msg_rev.pop(),
         );
+        break;
+      case "creation deletion update":
+        const names = msg_rev.pop();
+        names.forEach((n: string) => {
+          this.app.scene.getMeshByName(n)?.dispose();
+        });
+        this.app.importGlb("http://localhost:8001/scene.glb");
         break;
     }
   }

@@ -1,5 +1,6 @@
 {
   "sync glb": 0,
   "realtime sync": 1,
-  "transform update": 2
+  "transform update": 2,
+  "creation deletion update": 3
 }

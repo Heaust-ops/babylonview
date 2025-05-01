@@ -2,6 +2,7 @@ import {
   ArcRotateCamera,
   Color4,
   Engine,
+  ImportMeshAsync,
   LoadSceneAsync,
   Observable,
   Scene,
@@ -59,8 +60,8 @@ class App {
     this.canvas = canvas;
     this.engine = new Engine(this.canvas, true);
 
-    this.engine.displayLoadingUI = function () {};
-    this.engine.hideLoadingUI = function () {};
+    this.engine.displayLoadingUI = function () { };
+    this.engine.hideLoadingUI = function () { };
 
     this.blenderId = new BlenderId();
 
@@ -134,6 +135,15 @@ class App {
     });
 
     camera.attachControl(this.canvas, true);
+  }
+
+  public async importGlb(url: string): Promise<void> {
+    await ImportMeshAsync(url, this.scene);
+    this.blenderId.refresh(this.scene);
+    this.scene.meshes.forEach((m) => {
+      if (m.name !== "__root__") return;
+      if (!m.getChildren().length) m.dispose();
+    });
   }
 
   public async syncFromGlb(url: string): Promise<void> {
