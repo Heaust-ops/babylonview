@@ -1,13 +1,15 @@
 # Babylon View
 
-A blender addon that lets you view your babylonjs scenes in blender, currently in active dev.
+A blender addon that lets you view your [babylonjs](https://www.babylonjs.com/) scenes in [blender](https://www.blender.org/).
 
-But I'd love for you to try this out and give me your thoughts :)
+I'd love for you to try this out and give me your thoughts :)
 
 Babylonjs discussion thread: [https://forum.babylonjs.com/t/a-blender-addon-for-babylonjs-scene-viewing/57580](https://forum.babylonjs.com/t/a-blender-addon-for-babylonjs-scene-viewing/57580).
 
 - [How to install](#how-to-install)
 - [How to use](#how-to-use)
+- [Workflows / How it looks](#workflows)
+- [Bug Reporting](#bug-reporting)
 
 ## How to install
 
@@ -69,8 +71,59 @@ Use the `"glb sync"` button to sync your babylonjs scene whenever you make chang
 
 This is quite slow as it does a full gltf export/import.
 
-If you want something faster and more realtime, click on the `"realtime sync"` button and that'll turn on the `realtime sync` mode, any changes you do in blender will be instantly reflected in your browser. Please note this feature is still in active dev and does not gaurantee a perfect experience as of yet.
+If you want something faster and more realtime, click on the `"realtime sync"` button and that'll turn on the `realtime sync` mode, any changes you do in blender will be instantly reflected in your browser.
 
 The `"babylonjs inspector"` button opens up the `Babylonjs Inspector` for you to inspect your scene.
+
+## Workflows
+
+### Glb Sync
+
+If you're just occasionally glancing at your browser window, it might be a good idea to use the `"glb sync"` button to update the scene whenever you occasionally need to.
+
+This because the Glb Sync mode is more stable and gaurantees (as of right now) complete translation of your scene, whereas the realtime mode might introduce inconsistencies over time, and waste precious resources computing.
+
+Here's how one might use this workflow.
+
+https://github.com/user-attachments/assets/ded9561a-a1fb-4768-be91-5aedf99c1d12
+
+### Realtime Sync
+
+If the model you're working with is large, glb sync may take a lot of time. or you might want to more actively monitor your changes, for example when focusing on getting things right in babylonjs.
+
+here's how you might use the Realtime workflow.
+
+https://github.com/user-attachments/assets/94ed0990-558f-4673-9f8c-507d63171408
+
+### Mustang Showcase
+
+Here's how this [free mustang scene](https://www.blenderkit.com/get-blenderkit/451fc6ed-c9f5-499d-aa3d-fd5a41b02614/) from [blenderkit](https://www.blenderkit.com/) looks :)
+
+https://github.com/user-attachments/assets/4713afd9-db88-496a-9d61-6851f4344ee1
+
+## Bug Reporting
+
+If you face any issues with this addon, feel free to post it on the issues section of this repository.
+
+It would help if you included these details in your issue report,
+
+- what you issue is!
+- what you were expecting.
+- how you encountered the issue.
+- steps to reliably reproduce the issue.
+
+and that's kind of it!
+
+If you'd like addon to do extra stuff, have more features, please submit your feature request as an issue too!
+
+In that case please provide these details,
+
+- What feature do you want!
+- Why you want it.
+- How much of an impact this would make for you and your experience.
+
+That's it.
+
+---
 
 Have fun!
